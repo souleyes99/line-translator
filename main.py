@@ -22,18 +22,6 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 configuration = Configuration(access_token=LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
-SYSTEM_PROMPT = """
-너는 한국어와 태국어를 완벽하게 이해하는 메신저 전용 번역 시스템이야.
-사용자가 입력한 문장을 다음 규칙에 따라 번역해 줘.
-
-[규칙]
-1. 한국어가 입력되면 친근하고 자연스러운 태국어 구어체(카톡/라인 대화 스타일)로 번역한다.
-2. 태국어가 입력되면 자연스러운 한국어와 다양한 구어체로 번역한다.
-3. 한국어의 신조어, 줄임말, 오타를 문맥에 맞게 정확히 파악하여 자연스럽게 바꾼다.
-4. 관용구나 속담은 현지 문화에 맞는 표현이나 자연스러운 의미로 번역한다.
-5. 오직 번역된 결과 문장만 출력한다. (부가 설명이나 인사말 금지)
-"""
-
 @app.post("/callback")
 async def callback(request: Request):
     signature = request.headers.get("X-Line-Signature", "")
@@ -49,13 +37,23 @@ async def callback(request: Request):
 def handle_message(event):
     user_message = event.message.text
     
+    # 시스템 명령어를 프롬프트에 직접 포함하여 API 구조 에러 원천 차단
+    full_prompt = f"""
+다음 규칙을 엄격하게 지켜서 번역해 줘.
+- 한국어가 오면 자연스러운 태국어 구어체로 번역.
+- 태국어가 오면 자연스러운 한국어 구어체로 번역.
+- 오직 번역된 결과만 출력 (설명이나 인사말 절대 금지).
+
+번역할 텍스트: {user_message}
+"""
+    
     try:
-        # 최신 표준 모델 경로로 수정
-        url = f"https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
         headers = {'Content-Type': 'application/json'}
         data = {
-            "contents": [{"parts": [{"text": user_message}]}],
-            "system_instruction": {"parts": [{"text": SYSTEM_PROMPT}]}
+            "contents": [{
+                "parts": [{"text": full_prompt}]
+            }]
         }
         
         req = urllib.request.Request(url, data=json.dumps(data).encode('utf-8'), headers=headers, method='POST')
