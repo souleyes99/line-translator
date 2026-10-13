@@ -36,8 +36,9 @@ SYSTEM_PROMPT = """
 5. 오직 번역된 결과 문장만 출력한다. (부가 설명이나 인사말 금지)
 """
 
+# gemini-pro로 변경하여 404 오류 원천 차단
 model = genai.GenerativeModel(
-    model_name="gemini-1.5-flash",
+    model_name="gemini-pro",
     system_instruction=SYSTEM_PROMPT
 )
 
