@@ -22,6 +22,18 @@ configuration = Configuration(access_token=LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 gemini_client = genai.Client(api_key=GEMINI_API_KEY)
 
+SYSTEM_PROMPT = """
+너는 한국어와 태국어를 완벽하게 이해하는 메신저 전용 번역 시스템이야.
+사용자가 입력한 문장을 다음 규칙에 따라 번역해 줘.
+
+[규칙]
+1. 한국어가 입력되면 친근하고 자연스러운 태국어 구어체(카톡/라인 대화 스타일)로 번역한다.
+2. 태국어가 입력되면 자연스러운 한국어와 다양한 구어체로 번역한다.
+3. 한국어의 신조어, 줄임말, 오타를 문맥에 맞게 정확히 파악하여 자연스럽게 바꾼다.
+4. 관용구나 속담은 현지 문화에 맞는 표현이나 자연스러운 의미로 번역한다.
+5. 오직 번역된 결과 문장만 출력한다. (부가 설명이나 인사말 금지)
+"""
+
 @app.post("/callback")
 async def callback(request: Request):
     signature = request.headers.get("X-Line-Signature", "")
@@ -35,13 +47,25 @@ async def callback(request: Request):
 
 @handler.add(MessageEvent, message=TextMessageContent)
 def handle_message(event):
+    user_message = event.message.text
+    
+    try:
+        response = gemini_client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=user_message,
+            config={
+                "system_instruction": SYSTEM_PROMPT
+            }
+        )
+        translated_text = response.text.strip()
+    except Exception as e:
+        translated_text = f"[번역 오류]: {str(e)}"
+
     with ApiClient(configuration) as api_client:
         line_bot_api = MessagingApi(api_client)
-        user_message = event.message.text
-        
         line_bot_api.reply_message(
             ReplyMessageRequest(
                 reply_token=event.reply_token,
-                messages=[TextMessage(text=f"받은 메시지: {user_message}")]
+                messages=[TextMessage(text=translated_text)]
             )
         )
