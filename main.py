@@ -10,7 +10,7 @@ from linebot.v3.messaging import (
     TextMessage
 )
 from linebot.v3.webhooks import MessageEvent, TextMessageContent
-from google import genai
+import google.generativeai as genai
 
 app = FastAPI()
 
@@ -20,7 +20,9 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 configuration = Configuration(access_token=LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
-gemini_client = genai.Client(api_key=GEMINI_API_KEY)
+
+# Gemini API 설정
+genai.configure(api_key=GEMINI_API_KEY)
 
 SYSTEM_PROMPT = """
 너는 한국어와 태국어를 완벽하게 이해하는 메신저 전용 번역 시스템이야.
@@ -33,6 +35,11 @@ SYSTEM_PROMPT = """
 4. 관용구나 속담은 현지 문화에 맞는 표현이나 자연스러운 의미로 번역한다.
 5. 오직 번역된 결과 문장만 출력한다. (부가 설명이나 인사말 금지)
 """
+
+model = genai.GenerativeModel(
+    model_name="gemini-1.5-flash",
+    system_instruction=SYSTEM_PROMPT
+)
 
 @app.post("/callback")
 async def callback(request: Request):
@@ -50,16 +57,10 @@ def handle_message(event):
     user_message = event.message.text
     
     try:
-        response = gemini_client.models.generate_content(
-            model="gemini-3.8-flash",
-            contents=user_message,
-            config={
-                "system_instruction": SYSTEM_PROMPT
-            }
-        )
+        response = model.generate_content(user_message)
         translated_text = response.text.strip()
     except Exception as e:
-        translated_text = f"[상세 에러]: {str(e)}"
+        translated_text = f"[번역 오류]: {str(e)}"
 
     with ApiClient(configuration) as api_client:
         line_bot_api = MessagingApi(api_client)
