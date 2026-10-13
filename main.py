@@ -50,8 +50,8 @@ def handle_message(event):
     user_message = event.message.text
     
     try:
-        # v1 버전의 가장 안정적이고 보편적인 gemini-1.5-flash 엔드포인트 직통 호출
-        url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+        # 최신 표준 모델 경로로 수정
+        url = f"https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}"
         headers = {'Content-Type': 'application/json'}
         data = {
             "contents": [{"parts": [{"text": user_message}]}],
