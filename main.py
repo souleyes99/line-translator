@@ -59,7 +59,7 @@ def handle_message(event):
         )
         translated_text = response.text.strip()
     except Exception as e:
-        translated_text = f"[번역 오류]: {str(e)}"
+        translated_text = f"[상세 에러]: {str(e)}"
 
     with ApiClient(configuration) as api_client:
         line_bot_api = MessagingApi(api_client)
