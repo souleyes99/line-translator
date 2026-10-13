@@ -50,11 +50,11 @@ def handle_message(event):
     user_message = event.message.text
     
     try:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+        url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
         headers = {'Content-Type': 'application/json'}
         data = {
             "contents": [{"parts": [{"text": user_message}]}],
-            "systemInstruction": {"parts": [{"text": SYSTEM_PROMPT}]}
+            "system_instruction": {"parts": [{"text": SYSTEM_PROMPT}]}
         }
         
         req = urllib.request.Request(url, data=json.dumps(data).encode('utf-8'), headers=headers, method='POST')
