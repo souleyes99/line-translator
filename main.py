@@ -51,7 +51,7 @@ def handle_message(event):
     
     try:
         response = gemini_client.models.generate_content(
-            model="gemini-1.5-flash",
+            model="gemini-3.8-flash",
             contents=user_message,
             config={
                 "system_instruction": SYSTEM_PROMPT
